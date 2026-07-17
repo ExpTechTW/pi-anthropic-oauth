@@ -101,7 +101,7 @@ To add another Anthropic model, create `~/.pi/agent/models.json`:
 ```
 
 > [!NOTE]
-> Opus 4.8 and Fable 5 are registered automatically. Anthropic's Fable 5 promotional access now runs through July 19th 2026.
+> Opus 4.8 and Fable 5 are included in Pi's built-in Anthropic model catalog.
 >
 > Pi requires `baseUrl`, `apiKey`, and `api` when defining custom models in `models.json`. With this extension, requests normally authenticate through Claude Pro/Max OAuth after `/login`, so `apiKey` is only a placeholder to satisfy Pi's config requirements and does not need to be a valid Anthropic API key.
 >
