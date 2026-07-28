@@ -5,7 +5,7 @@
 Use Claude Pro/Max in Pi with browser OAuth.
 
 > [!IMPORTANT]
-> This release requires Pi 0.80.8 or later in the 0.80.x release line.
+> This extension supports Pi 0.80.8 or later.
 
 ## Features
 
@@ -13,8 +13,7 @@ Use Claude Pro/Max in Pi with browser OAuth.
 - Automatic token refresh
 - Claude Code-compatible OAuth headers and prompt shaping
 - No Anthropic API key needed
-- Uses Pi's Anthropic model registry
-- Adds Claude Opus 4.8 and Claude Fable 5 by default
+- Uses the Anthropic models available in Pi's built-in model registry
 - Auto-creates `~/.Claude Code` → `~/.pi` symlink when missing
 
 ## Quick start
@@ -101,7 +100,7 @@ To add another Anthropic model, create `~/.pi/agent/models.json`:
 ```
 
 > [!NOTE]
-> Opus 4.8 and Fable 5 are included in Pi's built-in Anthropic model catalog.
+> Opus 5 and Fable 5 are included in Pi's built-in Anthropic model catalog as `claude-opus-5` and `claude-fable-5`.
 >
 > Pi requires `baseUrl`, `apiKey`, and `api` when defining custom models in `models.json`. With this extension, requests normally authenticate through Claude Pro/Max OAuth after `/login`, so `apiKey` is only a placeholder to satisfy Pi's config requirements and does not need to be a valid Anthropic API key.
 >
