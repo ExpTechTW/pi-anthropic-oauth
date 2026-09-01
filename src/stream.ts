@@ -32,6 +32,56 @@ const REQUIRED_BETAS = [
   "interleaved-thinking-2025-05-14",
 ] as const;
 
+const DEFAULT_BUDGETS: Record<string, number> = {
+  minimal: 1024,
+  low: 4096,
+  medium: 10240,
+  high: 20480,
+  xhigh: 32000,
+  max: 40960,
+};
+
+/**
+ * Adaptive-thinking models (Opus 4.6+, Sonnet 4.6+) take `output_config.effort`
+ * instead of a token budget; that is the only way to reach xhigh/max. Older
+ * models keep the budget_tokens path.
+ */
+export function buildThinkingParams(
+  model: Model<Api>,
+  level: string,
+  budgets: Record<string, number> | undefined,
+  maxTokens: number,
+): Record<string, unknown> {
+  const m = model as Model<Api> & {
+    thinkingLevelMap?: Record<string, string | null>;
+    compat?: { forceAdaptiveThinking?: boolean };
+  };
+  const mapped = m.thinkingLevelMap?.[level];
+  if (mapped === null) return {};
+
+  if (m.compat?.forceAdaptiveThinking) {
+    const effort =
+      mapped ??
+      (level === "minimal" || level === "low"
+        ? "low"
+        : level === "medium"
+          ? "medium"
+          : "high");
+    return {
+      thinking: { type: "adaptive", display: "summarized" },
+      output_config: { effort },
+    };
+  }
+
+  const budget = budgets?.[level] ?? DEFAULT_BUDGETS[level] ?? 10240;
+  return {
+    thinking: {
+      type: "enabled",
+      budget_tokens: Math.min(budget, maxTokens - 1),
+    },
+  };
+}
+
 function mapStopReason(reason: string | null | undefined): StopReason {
   switch (reason) {
     case "end_turn":
@@ -155,24 +205,15 @@ export function streamAnthropicOAuth(
         params.tools = convertPiToolsToAnthropic(context.tools, isOAuth);
 
       if (options?.reasoning && model.reasoning && maxTokens > 1) {
-        const defaultBudgets: Record<string, number> = {
-          minimal: 1024,
-          low: 4096,
-          medium: 10240,
-          high: 20480,
-          xhigh: 32000,
-        };
-        const customBudget =
-          options.thinkingBudgets?.[
-            options.reasoning as keyof typeof options.thinkingBudgets
-          ];
-        const requestedBudget =
-          customBudget ?? defaultBudgets[options.reasoning] ?? 10240;
-
-        params.thinking = {
-          type: "enabled",
-          budget_tokens: Math.min(requestedBudget, maxTokens - 1),
-        };
+        Object.assign(
+          params,
+          buildThinkingParams(
+            model,
+            options.reasoning,
+            options.thinkingBudgets as Record<string, number> | undefined,
+            maxTokens,
+          ),
+        );
       }
 
       // Raw stream instead of the MessageStream helper: MessageStream
