@@ -122,6 +122,18 @@ function makeDefaultHeaders(
     headers["anthropic-beta"] = ["interleaved-thinking-2025-05-14"].join(",");
   }
 
+  // Gateway routing: PI_ANTHROPIC_BASE_URL + PI_ANTHROPIC_HEADERS (JSON) let the
+  // request go through a proxy (e.g. LiteLLM) while keeping the OAuth bearer.
+  // models.json provider overrides do not reach extension-registered providers.
+  const extraHeaders = process.env.PI_ANTHROPIC_HEADERS;
+  if (extraHeaders) {
+    try {
+      Object.assign(headers, JSON.parse(extraHeaders) as Record<string, string>);
+    } catch {
+      throw new Error("PI_ANTHROPIC_HEADERS must be a JSON object of headers");
+    }
+  }
+
   if (options?.headers) {
     for (const [key, value] of Object.entries(options.headers)) {
       const normalizedKey = key.toLowerCase();
@@ -182,7 +194,7 @@ export function streamAnthropicOAuth(
       if (isOAuth) defaultHeaders.authorization = `Bearer ${apiKey}`;
 
       const client = new Anthropic({
-        baseURL: model.baseUrl,
+        baseURL: process.env.PI_ANTHROPIC_BASE_URL || model.baseUrl,
         apiKey: isOAuth ? null : apiKey,
         authToken: isOAuth ? apiKey : null,
         defaultHeaders,
